@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SQL Joins Explorer: FoodDelivery</title>
+<style>
+:root{
+  --head:#2E1A36; --th:#2E1A36; --heading:#2E1A36; --primary:#2E1A36; --primary-h:#452A50; --on-primary:#FFFFFF;
+  --teal:#B06F00; --teal-l:#FCEFD2; --teal-m:#F0C86E; --hl:#F8DDA0; --venn-on:#E9A91F; --on-accent:#2E1A36;
+  --amber:#F9DEDA; --amber-t:#A12A1E; --warn:#C0392B;
+  --ink:#221A26; --muted:#6B5F70; --surface:#F7F3F8; --line:#E2D9E5; --bg:#FFFFFF; --card:#FFFFFF;
+  --code:#2E1A36; --venn-off:#EEE8F0; --venn-stroke:#2E1A36;
+  --serif:Cambria,"Source Serif Pro",Georgia,serif;
+  --sans:Calibri,"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  --mono:"Courier New",ui-monospace,Menlo,Consolas,monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --head:#1A0F20; --th:#3A2544; --heading:#F1E4F5; --primary:#E9A91F; --primary-h:#F5BD3E; --on-primary:#2E1A36;
+    --teal:#F0B43C; --teal-l:#3D2E12; --teal-m:#8A6620; --hl:#57421A; --venn-on:#E9A91F; --on-accent:#2E1A36;
+    --amber:#4A1F1B; --amber-t:#F29A8E; --warn:#E86A5A;
+    --ink:#EDE6F0; --muted:#A99BB0; --surface:#22172A; --line:#3A2C42; --bg:#150E1A; --card:#1D1424;
+    --code:#1A0F20; --venn-off:#3A2C42; --venn-stroke:#D8C8DE;
+  }
+}
+:root[data-theme="dark"]{
+  --head:#1A0F20; --th:#3A2544; --heading:#F1E4F5; --primary:#E9A91F; --primary-h:#F5BD3E; --on-primary:#2E1A36;
+    --teal:#F0B43C; --teal-l:#3D2E12; --teal-m:#8A6620; --hl:#57421A; --venn-on:#E9A91F; --on-accent:#2E1A36;
+    --amber:#4A1F1B; --amber-t:#F29A8E; --warn:#E86A5A;
+    --ink:#EDE6F0; --muted:#A99BB0; --surface:#22172A; --line:#3A2C42; --bg:#150E1A; --card:#1D1424;
+    --code:#1A0F20; --venn-off:#3A2C42; --venn-stroke:#D8C8DE;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.45}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--teal);outline-offset:2px}
+code{font-family:var(--mono);font-size:.9em}
+
+header{background:var(--head);color:#fff;padding:28px clamp(16px,4vw,48px) 0}
+h1{font-family:var(--serif);font-size:clamp(28px,4vw,40px);line-height:1.1;margin:0 0 6px}
+header p{margin:0 0 22px;color:#DCCBE3;max-width:72ch}
+.picker{display:flex;gap:4px;flex-wrap:wrap}
+.picker button{border:0;background:transparent;color:#DCCBE3;padding:10px 14px;border-radius:8px 8px 0 0;font-size:15px}
+.picker button:hover{color:#fff;background:rgba(255,255,255,.08)}
+.picker button[aria-pressed="true"]{background:var(--bg);color:var(--heading);font-weight:700}
+.picker .sep{width:1px;background:rgba(255,255,255,.18);margin:8px 6px}
+
+main{display:grid;grid-template-columns:340px minmax(0,1fr);gap:32px;padding:28px clamp(16px,4vw,48px) 56px;max-width:1500px}
+aside{min-width:0}
+aside h2{font-family:var(--serif);font-size:28px;line-height:1.15;margin:0 0 8px;color:var(--heading)}
+aside .desc{margin:0 0 16px;max-width:42ch}
+.venn{width:100%;height:auto;display:block;margin:4px 0 18px}
+.venn .on{fill:var(--venn-on)} .venn .off{fill:var(--venn-off)} .venn .ring{fill:none;stroke:var(--venn-stroke);stroke-width:2.5}
+.venn .ton{fill:var(--on-accent);font-weight:700} .venn .toff{fill:var(--heading);font-weight:700}
+.venn .dl{fill:var(--heading)} .venn .dr{fill:var(--teal)} .venn .wire{stroke:var(--teal);stroke-width:1.5;opacity:.6}
+pre.sql{background:var(--code);color:#F3EAF5;font-family:var(--mono);font-size:14px;line-height:1.55;padding:16px 18px;border-radius:10px;margin:0 0 16px;overflow-x:auto;white-space:pre}
+pre.sql .kw{color:#F5C04A;font-weight:700}
+pre.sql .cm{color:#B49DBE;font-style:italic}
+pre.sql .ln{display:inline-block;min-width:100%;border-radius:4px}
+pre.sql .ln.now{background:rgba(245,192,74,.2)}
+pre.sql .ln.later{opacity:.38}
+.tip{background:var(--teal-l);border-radius:10px;padding:12px 14px;font-size:15px;margin:0}
+.tip strong{color:var(--heading)}
+.tip code{background:var(--card);padding:1px 5px;border-radius:4px}
+
+.hops{margin:0 0 16px}
+.hops p{margin:0 0 8px;font-size:14px;color:var(--muted)}
+.chain{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.chain .start{font-weight:700;color:var(--heading);padding:6px 4px;font-size:14px}
+.chain .arr{color:var(--muted);font-size:14px}
+.chain button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 10px;font-size:14px}
+.chain button:hover{border-color:var(--teal)}
+.chain button.done{border-color:var(--teal-m);color:var(--teal)}
+.chain button[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:var(--on-primary);font-weight:700}
+
+.stage-wrap{min-width:0}
+.stage{position:relative;display:grid;grid-template-columns:max-content minmax(70px,1fr) max-content;align-items:start;overflow-x:auto;padding:4px 2px 8px}
+.stage svg.wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.tcap{display:flex;align-items:baseline;gap:8px;margin:0 0 6px}
+.tcap strong{font-family:var(--serif);font-size:18px;color:var(--heading)}
+.tcap .alias{font-family:var(--mono);font-size:13px;color:var(--muted)}
+table{border-collapse:collapse;font-size:15px}
+th{background:var(--th);color:#fff;font-weight:700;text-align:left;padding:7px 12px;white-space:nowrap}
+td{padding:6px 12px;border-bottom:1px solid var(--line);white-space:nowrap;background:var(--card);transition:background .2s}
+.src td[contenteditable]{cursor:text}
+.src td[contenteditable]:hover{box-shadow:inset 0 0 0 1px var(--teal-m)}
+.src td[contenteditable]:focus{outline:none;box-shadow:inset 0 0 0 2px var(--teal);background:var(--card)}
+.src.derived td{font-style:normal;color:var(--ink)}
+.src.derived .tcap strong{font-style:italic}
+.src tr.matched td{background:var(--teal-l)}
+.src tr.nomatch td{background:var(--amber)}
+.src tr.cur td{background:var(--card);box-shadow:inset 0 2px 0 var(--heading),inset 0 -2px 0 var(--heading)}
+.src tr.hl td{background:var(--hl)}
+td.nullv{color:var(--amber-t);font-family:var(--mono);font-style:italic;font-weight:700;font-size:13px}
+.src td.del{padding:0 4px;border-bottom:1px solid var(--line)}
+.src th.del{padding:0;background:var(--th)}
+button.x{border:0;background:transparent;color:var(--muted);font-size:18px;line-height:1;padding:4px 6px;border-radius:4px}
+button.x:hover{color:var(--amber-t);background:var(--amber)}
+button.add{margin-top:8px;border:1px dashed var(--teal-m);background:var(--card);color:var(--teal);border-radius:6px;padding:4px 10px;font-size:14px}
+button.add:hover{background:var(--teal-l)}
+.derived-note{margin-top:8px;font-size:13px;color:var(--muted);max-width:36ch}
+
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0 8px}
+.btn{border:1px solid var(--primary);background:var(--card);color:var(--heading);border-radius:8px;padding:8px 16px;font-weight:700;font-size:15px}
+.btn:hover{background:var(--surface)}
+.btn.primary{background:var(--primary);color:var(--on-primary)}
+.btn.primary:hover{background:var(--primary-h)}
+.btn.quiet{border-color:var(--line);color:var(--muted);font-weight:400}
+label.speed{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:15px;margin-left:4px}
+select{font:inherit;font-size:15px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
+.progress{margin-left:auto;color:var(--muted);font-size:15px}
+.narration{min-height:3em;margin:4px 0 0;padding:12px 14px;border-radius:10px;background:var(--surface);font-size:16px;max-width:80ch}
+.narration .ok{color:var(--teal);font-weight:700}
+.narration .no{color:var(--amber-t);font-weight:700}
+.narration code{background:var(--card);padding:1px 5px;border-radius:4px}
+
+.result{margin-top:28px}
+.result h3{font-family:var(--serif);font-size:22px;color:var(--heading);margin:0 0 8px;display:flex;align-items:baseline;gap:12px}
+.result h3 .count{font-family:var(--sans);font-size:16px;color:var(--muted);font-weight:400}
+.res-scroll{overflow-x:auto}
+.res tr.match td{background:var(--teal-l)}
+.res tr.fresh td{animation:pop .7s ease-out}
+.res tbody tr:hover td{background:var(--hl)}
+@keyframes pop{from{background:var(--teal-m)}}
+.empty{color:var(--muted);font-style:italic;padding:14px 0}
+.legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:14px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:14px;border-radius:3px;display:inline-block;border:1px solid var(--line)}
+.hint{font-size:14px;color:var(--muted);margin:0 0 12px}
+
+@media (max-width:900px){main{grid-template-columns:1fr}.progress{margin-left:0;width:100%}}
+@media (prefers-reduced-motion:reduce){.res tr.fresh td{animation:none}td{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>SQL Joins Explorer: FoodDelivery</h1>
+  <p>Pick a join, then play it step by step to watch rows get compared and added. Click any cell in the source tables to change the data and see how the result changes.</p>
+  <nav class="picker" id="picker" aria-label="Join type"></nav>
+</header>
+
+<main>
+  <aside>
+    <h2 id="jname"></h2>
+    <p class="desc" id="jdesc"></p>
+    <div class="hops" id="hops" hidden></div>
+    <div id="venn"></div>
+    <pre class="sql" id="sql"></pre>
+    <p class="tip" id="tip"></p>
+  </aside>
+
+  <div class="stage-wrap">
+    <p class="hint">Source tables: click a cell to edit it, type NULL for an empty value. Hover a result row to see which rows it came from.</p>
+    <div class="stage" id="stage">
+      <div class="src" id="lt"></div>
+      <div></div>
+      <div class="src" id="rt"></div>
+      <svg class="wires" id="wires" aria-hidden="true"></svg>
+    </div>
+
+    <div class="controls">
+      <button class="btn primary" id="play">Play</button>
+      <button class="btn" id="step">Step</button>
+      <button class="btn" id="all">Show full result</button>
+      <label class="speed">Speed
+        <select id="speed"><option value="1400">Slow</option><option value="800" selected>Normal</option><option value="350">Fast</option><option value="120">Very fast</option></select>
+      </label>
+      <button class="btn quiet" id="resetData">Reset sample data</button>
+      <span class="progress" id="progress"></span>
+    </div>
+    <p class="narration" id="narr" aria-live="polite"></p>
+
+    <section class="result">
+      <h3>Result <span class="count" id="count"></span></h3>
+      <div class="res-scroll" id="res"></div>
+      <div class="legend">
+        <span><i style="background:var(--teal-l)"></i>row built from a match</span>
+        <span><i style="background:var(--amber)"></i>NULL, no matching row on that side</span>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+/* ---------- sample data (from the FoodDelivery guide) ---------- */
+const SAMPLE = {
+  Customer: [
+    {CustomerID:'101', CustomerName:'anu',   City:'Boston'},
+    {CustomerID:'102', CustomerName:'shri',  City:'Boston'},
+    {CustomerID:'103', CustomerName:'priya', City:'Chicago'},
+    {CustomerID:'104', CustomerName:'john',  City:'Chicago'},
+    {CustomerID:'105', CustomerName:'meena', City:'Dallas'},
+    {CustomerID:'106', CustomerName:'David', City:'Boston'},
+  ],
+  Orders: [
+    {OrderID:'301', CustomerID:'101', OrderDate:'2026-08-01', TotalAmount:'46.00'},
+    {OrderID:'302', CustomerID:'102', OrderDate:'2026-08-02', TotalAmount:'56.00'},
+    {OrderID:'303', CustomerID:'101', OrderDate:'2026-08-03', TotalAmount:'54.00'},
+    {OrderID:'304', CustomerID:'103', OrderDate:'2026-08-04', TotalAmount:'56.00'},
+    {OrderID:'305', CustomerID:'104', OrderDate:'2026-08-05', TotalAmount:'35.00'},
+    {OrderID:'306', CustomerID:'105', OrderDate:'2026-08-06', TotalAmount:'43.00'},
+    {OrderID:'307', CustomerID:'102', OrderDate:'2026-08-07', TotalAmount:'80.00'},
+  ],
+  OrderDetails: [
+    {OrderID:'301', FoodID:'201', Quantity:'2'}, {OrderID:'301', FoodID:'203', Quantity:'2'},
+    {OrderID:'302', FoodID:'204', Quantity:'1'}, {OrderID:'302', FoodID:'205', Quantity:'2'},
+    {OrderID:'303', FoodID:'202', Quantity:'1'}, {OrderID:'303', FoodID:'201', Quantity:'1'},
+    {OrderID:'304', FoodID:'206', Quantity:'3'}, {OrderID:'304', FoodID:'207', Quantity:'1'},
+    {OrderID:'305', FoodID:'205', Quantity:'1'}, {OrderID:'305', FoodID:'208', Quantity:'2'},
+    {OrderID:'306', FoodID:'203', Quantity:'3'}, {OrderID:'307', FoodID:'204', Quantity:'2'},
+  ],
+  FoodItem: [
+    {FoodID:'201', FoodName:'Chicken Biri',    Price:'18.00', RestaurantID:'1'},
+    {FoodID:'202', FoodName:'Paneer Biriyani', Price:'17.00', RestaurantID:'1'},
+    {FoodID:'203', FoodName:'Butter Naan',     Price:'10.00', RestaurantID:'1'},
+    {FoodID:'204', FoodName:'Cheese Pizza',    Price:'14.99', RestaurantID:'2'},
+    {FoodID:'205', FoodName:'Veg Pizza',       Price:'12.99', RestaurantID:'2'},
+    {FoodID:'206', FoodName:'Veg Taco',        Price:'13.99', RestaurantID:'3'},
+    {FoodID:'207', FoodName:'Chicken Taco',    Price:'15.99', RestaurantID:'3'},
+    {FoodID:'208', FoodName:'Chicken Pizza',   Price:'16.99', RestaurantID:'2'},
+  ],
+  Restaurant: [
+    {RestaurantID:'1', RestaurantName:'Spice Garden', City:'Boston',  CuisineType:'Indian'},
+    {RestaurantID:'2', RestaurantName:'Pizza Corner', City:'Boston',  CuisineType:'Italian'},
+    {RestaurantID:'3', RestaurantName:'Taco House',   City:'Chicago', CuisineType:'Mexican'},
+  ],
+  Employee: [
+    {EmployeeID:'1', EmployeeName:'Alice', ManagerID:null},
+    {EmployeeID:'2', EmployeeName:'Bob',   ManagerID:'1'},
+    {EmployeeID:'3', EmployeeName:'Carol', ManagerID:'1'},
+    {EmployeeID:'4', EmployeeName:'Dan',   ManagerID:'2'},
+  ],
+  PriceBand: [
+    {Band:'Budget',   MinPrice:'0.00',  MaxPrice:'12.99'},
+    {Band:'Standard', MinPrice:'13.00', MaxPrice:'15.99'},
+    {Band:'Premium',  MinPrice:'16.00', MaxPrice:'99.99'},
+  ],
+};
+let data = JSON.parse(JSON.stringify(SAMPLE));
+
+const isNull = v => v === null || v === undefined || String(v).trim() === '' || String(v).trim().toUpperCase() === 'NULL';
+const fmt = v => isNull(v) ? 'NULL' : String(v).trim();
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- multi-table chain (guide sections 3 and 4) ---------- */
+const CHAIN = [
+  {R:'Customer',     ra:'c',  lk:'o.CustomerID',   rk:'CustomerID',   rCols:['CustomerID','CustomerName'],
+   title:'Orders + Customer', desc:'Each order looks for the customer who placed it. Now every order has a name.',
+   tip:'<strong>Watch for:</strong> David (106) has no orders, so he drops out. This is still an INNER JOIN.'},
+  {R:'OrderDetails', ra:'od', lk:'o.OrderID',      rk:'OrderID',      rCols:['OrderID','FoodID','Quantity'],
+   lCols:['o.OrderID','c.CustomerName'],
+   title:'+ OrderDetails', desc:'Each row from hop 1 now looks for its line items. An order with two items becomes two rows.',
+   tip:'<strong>Watch the count:</strong> 7 orders turn into 12 rows, one per food item ordered.'},
+  {R:'FoodItem',     ra:'f',  lk:'od.FoodID',      rk:'FoodID',       rCols:['FoodID','FoodName','RestaurantID'],
+   lCols:['o.OrderID','c.CustomerName','od.FoodID','od.Quantity'],
+   title:'+ FoodItem', desc:'Each line item looks up its FoodID so we can see the food name instead of a number.',
+   tip:'<strong>Try:</strong> change a FoodID in the FoodItem table to 299. Every order row for that dish disappears, because INNER JOIN needs a match.'},
+  {R:'Restaurant',   ra:'r',  lk:'f.RestaurantID', rk:'RestaurantID', rCols:['RestaurantID','RestaurantName'],
+   lCols:['c.CustomerName','o.OrderID','f.FoodName','f.RestaurantID'],
+   out:[{h:'c.CustomerName',s:'L',c:'c.CustomerName'},{h:'o.OrderID',s:'L',c:'o.OrderID'},{h:'f.FoodName',s:'L',c:'f.FoodName'},{h:'r.RestaurantName',s:'R',c:'RestaurantName'}],
+   title:'+ Restaurant', desc:'Finally each food finds the restaurant that makes it.',
+   tip:'<strong>This answers:</strong> “What did each customer order, and which restaurant prepared it?”'},
+];
+const CHAIN_SQL = ['SELECT c.CustomerName, o.OrderID,','       f.FoodName, r.RestaurantName','FROM Orders o','INNER JOIN Customer c','  ON o.CustomerID = c.CustomerID','INNER JOIN OrderDetails od','  ON o.OrderID = od.OrderID','INNER JOIN FoodItem f','  ON od.FoodID = f.FoodID','INNER JOIN Restaurant r','  ON f.RestaurantID = r.RestaurantID;'];
+const prefix = (a, r) => Object.fromEntries(Object.entries(r).map(([k, v]) => [`${a}.${k}`, v]));
+const same = (a, b) => !isNull(a) && !isNull(b) && fmt(a) === fmt(b);
+function chainRows(n) {
+  let rows = data.Orders.map(r => prefix('o', r));
+  for (let i = 0; i < n; i++) {
+    const h = CHAIN[i], next = [];
+    rows.forEach(l => data[h.R].forEach(r => { if (same(l[h.lk], r[h.rk])) next.push({...l, ...prefix(h.ra, r)}); }));
+    rows = next;
+  }
+  return rows;
+}
+const rowsOf = t => t.startsWith('@') ? chainRows(+t.slice(1)) : data[t];
+
+/* ---------- labels for narration ---------- */
+function labelOf(t, r) {
+  if (t.startsWith('@')) {
+    let s = `${fmt(r['c.CustomerName'])}’s order ${fmt(r['o.OrderID'])}`;
+    if (r['f.FoodName'] !== undefined) s += ` (${fmt(r['f.FoodName'])})`;
+    else if (r['od.FoodID'] !== undefined) s += ` (food ${fmt(r['od.FoodID'])})`;
+    return esc(s);
+  }
+  const L = {Customer:r=>r.CustomerName, Orders:r=>'order '+fmt(r.OrderID), OrderDetails:r=>`line ${fmt(r.OrderID)}/${fmt(r.FoodID)}`,
+    FoodItem:r=>r.FoodName, Restaurant:r=>r.RestaurantName, Employee:r=>r.EmployeeName, PriceBand:r=>r.Band};
+  return esc(fmt(L[t](r)));
+}
+
+/* ---------- match conditions ---------- */
+function eq(lc, rc) {
+  return {
+    on: (l, r) => same(l[lc], r[rc]),
+    text: (l, r, c) => `<code>${c.la ? c.la + '.' : ''}${lc} = ${c.ra}.${rc}</code> → <code>${esc(fmt(l[lc]))} = ${esc(fmt(r[rc]))}</code>` +
+      ((isNull(l[lc]) || isNull(r[rc])) ? ' is unknown, because NULL never equals anything' : ''),
+  };
+}
+const between = {
+  on: (l, r) => !isNull(l.Price) && !isNull(r.MinPrice) && !isNull(r.MaxPrice) && +l.Price >= +r.MinPrice && +l.Price <= +r.MaxPrice,
+  text: (l, r) => `<code>${esc(fmt(l.Price))} BETWEEN ${esc(fmt(r.MinPrice))} AND ${esc(fmt(r.MaxPrice))}</code>`,
+};
+const always = { on: () => true, text: () => 'no ON condition, so every pair is kept' };
+
+/* ---------- join definitions ---------- */
+const CO = {L:'Customer', la:'c', R:'Orders', ra:'o', lCols:['CustomerID','CustomerName'], rCols:['OrderID','CustomerID','TotalAmount'],
+  vl:'CUSTOMER', vr:'ORDERS', ...eq('CustomerID','CustomerID')};
+const CO_SQL = j => ['SELECT c.CustomerID, c.CustomerName,','       o.OrderID, o.TotalAmount','FROM Customer c', j, '  ON c.CustomerID = o.CustomerID;'];
+
+const JOINS = {
+  inner: {L:'Orders', la:'o', R:'Customer', ra:'c', lCols:['OrderID','CustomerID','TotalAmount'], rCols:['CustomerID','CustomerName'],
+    vl:'ORDERS', vr:'CUSTOMER', ...eq('CustomerID','CustomerID'), label:'Inner', name:'INNER JOIN', venn:'inner',
+    out:[{h:'o.OrderID',s:'L',c:'OrderID'},{h:'o.OrderDate',s:'L',c:'OrderDate'},{h:'c.CustomerName',s:'R',c:'CustomerName'},{h:'o.TotalAmount',s:'L',c:'TotalAmount'}],
+    sql:['SELECT o.OrderID, o.OrderDate,','       c.CustomerName, o.TotalAmount','FROM Orders o','INNER JOIN Customer c','  ON o.CustomerID = c.CustomerID;'],
+    desc:'Keeps only the rows that have a match in both tables. Each order picks up the name of the customer who placed it.',
+    tip:'<strong>Watch for:</strong> David (106) never placed an order, so he does not appear. Try changing order 305’s CustomerID to 101 and see john vanish too.'},
+  left: {...CO, label:'Left', name:'LEFT OUTER JOIN', venn:'left', keepL:true, sql:CO_SQL('LEFT JOIN Orders o'),
+    desc:'Keeps every customer. Where a customer has no order, the order columns are filled with NULL.',
+    tip:'<strong>Try:</strong> add <code>WHERE o.OrderID IS NULL</code> in your head, and only David is left: the customers who have never ordered.'},
+  right: {...CO, label:'Right', name:'RIGHT OUTER JOIN', venn:'right', keepR:true, sql:CO_SQL('RIGHT JOIN Orders o'),
+    desc:'Keeps every order. Where an order has no matching customer, the customer columns are filled with NULL.',
+    tip:'<strong>Notice:</strong> the foreign key means every order has a customer, so this looks just like INNER. Change an order’s CustomerID to 109 (the explorer does not enforce the key) to see a NULL. Same as <code>FROM Orders o LEFT JOIN Customer c</code>.'},
+  full: {...CO, label:'Full outer', name:'FULL OUTER JOIN', venn:'full', keepL:true, keepR:true,
+    sql:['-- MySQL has no FULL OUTER JOIN,','-- so combine LEFT and RIGHT:','SELECT c.CustomerID, c.CustomerName, o.OrderID','FROM Customer c LEFT JOIN Orders o','  ON c.CustomerID = o.CustomerID','UNION','SELECT c.CustomerID, c.CustomerName, o.OrderID','FROM Customer c RIGHT JOIN Orders o','  ON c.CustomerID = o.CustomerID;'],
+    desc:'Keeps every row from both tables, matched where possible and padded with NULL where not.',
+    tip:'<strong>Try:</strong> change order 307’s CustomerID to 109. Now you get NULLs on both sides: David with no order, and an order with no customer.'},
+  cross: {L:'Customer', la:'c', R:'Restaurant', ra:'r', lCols:['CustomerID','CustomerName'], rCols:['RestaurantID','RestaurantName'],
+    vl:'CUSTOMER', vr:'RESTAURANT', ...always, label:'Cross', name:'CROSS JOIN', venn:'cross',
+    out:[{h:'c.CustomerName',s:'L',c:'CustomerName'},{h:'r.RestaurantName',s:'R',c:'RestaurantName'}],
+    sql:['SELECT c.CustomerName,','       r.RestaurantName','FROM Customer c','CROSS JOIN Restaurant r;'],
+    desc:'Pairs every customer with every restaurant. Rows = customers × restaurants.',
+    tip:'<strong>Count it:</strong> 6 customers × 3 restaurants = 18 rows. Add a restaurant and watch it jump by 6.'},
+  self: {L:'Employee', la:'e', R:'Employee', ra:'m', lCols:['EmployeeID','EmployeeName','ManagerID'], rCols:['EmployeeID','EmployeeName'],
+    vl:'EMPLOYEE e', vr:'EMPLOYEE m', ...eq('ManagerID','EmployeeID'), keepL:true, label:'Self', name:'SELF JOIN', venn:'left',
+    out:[{h:'employee',s:'L',c:'EmployeeName'},{h:'manager',s:'R',c:'EmployeeName'}],
+    sql:['SELECT e.EmployeeName AS employee,','       m.EmployeeName AS manager','FROM Employee e','LEFT JOIN Employee m','  ON e.ManagerID = m.EmployeeID;'],
+    desc:'A table joined to itself using two aliases. Each employee is matched to the employee who manages them.',
+    tip:'<strong>Try:</strong> change Dan’s ManagerID to 3. Both panels are the same table, so the edit shows up on both sides. With INNER JOIN, Alice (no manager) would disappear.'},
+  multi: {label:'Multi-table', name:'INNER JOIN, 5 tables', multi:true},
+  sep: null,
+  natural: {L:'Orders', la:'o', R:'Customer', ra:'c', lCols:['OrderID','CustomerID','TotalAmount'], rCols:['CustomerID','CustomerName'],
+    vl:'ORDERS', vr:'CUSTOMER', ...eq('CustomerID','CustomerID'), label:'Natural', name:'NATURAL JOIN', venn:'inner',
+    out:[{h:'CustomerID',s:'L',c:'CustomerID'},{h:'OrderID',s:'L',c:'OrderID'},{h:'CustomerName',s:'R',c:'CustomerName'},{h:'TotalAmount',s:'L',c:'TotalAmount'}],
+    sql:['SELECT *','FROM Orders','NATURAL JOIN Customer;'],
+    desc:'Joins automatically on every column with the same name in both tables (here: CustomerID), and shows that column once.',
+    tip:'<strong>Careful:</strong> Customer and Restaurant both have City, State and Phone. <code>Customer NATURAL JOIN Restaurant</code> would match on all three, and since phones never match, you get zero rows.'},
+  nonequi: {L:'FoodItem', la:'f', R:'PriceBand', ra:'b', lCols:['FoodName','Price'], rCols:['Band','MinPrice','MaxPrice'], ...between,
+    label:'Non-equi', name:'NON-EQUI JOIN', venn:'inner', vl:'FOODITEM', vr:'PRICEBAND',
+    out:[{h:'f.FoodName',s:'L',c:'FoodName'},{h:'f.Price',s:'L',c:'Price'},{h:'b.Band',s:'R',c:'Band'}],
+    sql:['SELECT f.FoodName, f.Price, b.Band','FROM FoodItem f','JOIN PriceBand b','  ON f.Price BETWEEN b.MinPrice','               AND b.MaxPrice;'],
+    desc:'Matches on a range instead of equality. Each dish lands in the price band that contains its price. (PriceBand is an extra table for this demo.)',
+    tip:'<strong>Try:</strong> change Standard’s MaxPrice to 17.00 so the bands overlap, and watch some dishes appear twice.'},
+  semi: {L:'Customer', la:'c', R:'Orders', ra:'o', lCols:['CustomerID','CustomerName'], rCols:['OrderID','CustomerID'],
+    ...eq('CustomerID','CustomerID'), mode:'semi', label:'Semi', name:'SEMI JOIN (EXISTS)', venn:'inner', vl:'CUSTOMER', vr:'ORDERS',
+    sql:['SELECT c.*','FROM Customer c','WHERE EXISTS (','  SELECT 1 FROM Orders o','  WHERE o.CustomerID = c.CustomerID);'],
+    desc:'Lists each customer once if they have placed at least one order. No columns from Orders are returned.',
+    tip:'<strong>Compare:</strong> INNER JOIN would list anu twice, once per order. The semi join lists her once.'},
+  anti: {L:'Customer', la:'c', R:'Orders', ra:'o', lCols:['CustomerID','CustomerName'], rCols:['OrderID','CustomerID'],
+    ...eq('CustomerID','CustomerID'), mode:'anti', label:'Anti', name:'ANTI JOIN (NOT EXISTS)', venn:'anti', vl:'CUSTOMER', vr:'ORDERS',
+    sql:['SELECT c.*','FROM Customer c','WHERE NOT EXISTS (','  SELECT 1 FROM Orders o','  WHERE o.CustomerID = c.CustomerID);'],
+    desc:'Lists the customers who have never placed an order.',
+    tip:'<strong>Same result:</strong> <code>LEFT JOIN Orders o … WHERE o.OrderID IS NULL</code>. Avoid NOT IN when the subquery can contain NULL.'},
+};
+
+function multiCfg(h) {
+  const hop = CHAIN[h];
+  const base = {R:hop.R, ra:hop.ra, rCols:hop.rCols, venn:'inner', name:'INNER JOIN, 5 tables', label:'Multi-table', vr:hop.R.toUpperCase(), out:hop.out};
+  if (h === 0) return {...base, L:'Orders', la:'o', lCols:['OrderID','CustomerID','TotalAmount'], vl:'ORDERS', ...eq('CustomerID','CustomerID'),
+    out:[{h:'o.OrderID',s:'L',c:'OrderID'},{h:'o.CustomerID',s:'L',c:'CustomerID'},{h:'c.CustomerName',s:'R',c:'CustomerName'}]};
+  return {...base, L:'@' + h, la:'', lCols:hop.lCols, vl:'RESULT', ...eq(hop.lk, hop.rk)};
+}
+
+/* ---------- join engine: builds the step-by-step trace ---------- */
+function outSpec(c) {
+  const lh = x => c.la ? `${c.la}.${x}` : x;
+  if (c.mode) return c.lCols.map(x => ({h:lh(x), s:'L', c:x}));
+  return c.out || [...c.lCols.map(x => ({h:lh(x), s:'L', c:x})), ...c.rCols.map(x => ({h:`${c.ra}.${x}`, s:'R', c:x}))];
+}
+function trace(c) {
+  const L = rowsOf(c.L), R = rowsOf(c.R), spec = outSpec(c);
+  const steps = [], rows = [], lm = new Set(), rm = new Set(), semiDone = new Set();
+  const emit = (li, ri) => {
+    rows.push({li, ri, cells: spec.map(o => {
+      const idx = o.s === 'L' ? li : ri, tbl = o.s === 'L' ? L : R;
+      if (idx === null) return {v:'NULL', nul:true};
+      const v = tbl[idx][o.c]; return {v: fmt(v), nul: isNull(v)};
+    }), match: li !== null && ri !== null || c.mode === 'semi'});
+    return rows.length - 1;
+  };
+  const nl = i => labelOf(c.L, L[i]), nr = j => labelOf(c.R, R[j]);
+  L.forEach((l, i) => {
+    R.forEach((r, j) => {
+      const m = c.on(l, r); let e = null, extra = '';
+      if (m) {
+        lm.add(i); rm.add(j);
+        if (c.mode === 'semi') { if (!semiDone.has(i)) { semiDone.add(i); e = emit(i, null); extra = ', listed.'; } else extra = ', already listed, so nothing new is added.'; }
+        else if (c.mode === 'anti') extra = ', so a match exists.';
+        else { e = emit(i, j); extra = ', row added.'; }
+      }
+      steps.push({t:'cmp', li:i, ri:j, m, e,
+        text:`Compare <strong>${nl(i)}</strong> with <strong>${nr(j)}</strong>: ${c.text(l, r, c)} <span class="${m?'ok':'no'}">${m?'match':'no match'}</span>${extra}`});
+    });
+    if (c.mode === 'anti') {
+      if (lm.has(i)) steps.push({t:'drop', li:i, text:`<strong>${nl(i)}</strong> has a match, so NOT EXISTS is false: <span class="no">excluded</span>.`});
+      else steps.push({t:'pad', li:i, e:emit(i, null), text:`<strong>${nl(i)}</strong> has no match, so NOT EXISTS is true: <span class="ok">kept</span>.`});
+    } else if (!lm.has(i)) {
+      if (c.keepL) steps.push({t:'pad', li:i, e:emit(i, null), text:`<strong>${nl(i)}</strong> matched nothing, but ${c.name} keeps every left row, so it is added with NULLs on the right.`});
+      else steps.push({t:'drop', li:i, text:`<strong>${nl(i)}</strong> matched nothing, so it is <span class="no">left out</span>.`});
+    }
+  });
+  if (!c.mode) R.forEach((r, j) => {
+    if (rm.has(j) || (c.L === c.R && c.keepL)) return;
+    if (c.keepR) steps.push({t:'pad', ri:j, e:emit(null, j), text:`<strong>${nr(j)}</strong> matched nothing, but ${c.name} keeps every right row, so it is added with NULLs on the left.`});
+    else steps.push({t:'drop', ri:j, text:`<strong>${nr(j)}</strong> matched no row on the left, so it is <span class="no">left out</span>.`});
+  });
+  return {steps, rows, spec};
+}
+
+/* ---------- state ---------- */
+let key = 'inner', hop = 0, T = null, pos = -1, full = true, timer = null;
+const $ = id => document.getElementById(id);
+const cfg = () => JOINS[key].multi ? multiCfg(hop) : JOINS[key];
+
+/* ---------- rendering ---------- */
+function sqlHtml(lines, now, later) {
+  return lines.map((l, i) => {
+    let h = l.trim().startsWith('--') ? `<span class="cm">${esc(l)}</span>` :
+      esc(l).replace(/\b(SELECT|FROM|INNER|LEFT|RIGHT|FULL|OUTER|CROSS|NATURAL|JOIN|ON|AS|WHERE|NOT|EXISTS|BETWEEN|AND|UNION)\b/g, '<span class="kw">$1</span>');
+    const cls = now && now.includes(i) ? 'now' : (later && later(i) ? 'later' : '');
+    return cls ? `<span class="ln ${cls}">${h}</span>` : h;
+  }).join('\n');
+}
+function vennSvg(kind, a, b) {
+  const W = 320, H = 180;
+  if (kind === 'cross') {
+    const ly = [30, 70, 110, 150], ry = [45, 90, 135];
+    let s = `<svg class="venn" viewBox="0 0 ${W} ${H}" role="img" aria-label="Every left row connects to every right row">`;
+    ly.forEach(y1 => ry.forEach(y2 => s += `<line class="wire" x1="110" y1="${y1}" x2="210" y2="${y2}"/>`));
+    ly.forEach(y => s += `<circle class="dl" cx="110" cy="${y}" r="9"/>`);
+    ry.forEach(y => s += `<circle class="dr" cx="210" cy="${y}" r="9"/>`);
+    s += `<text class="toff" x="90" y="95" text-anchor="end" font-size="14">${a}</text>`;
+    s += `<text class="toff" x="230" y="95" font-size="14">${b}</text></svg>`;
+    return s;
+  }
+  const on = {inner:[0,1,0], left:[1,1,0], right:[0,1,1], full:[1,1,1], anti:[1,0,0]}[kind];
+  const f = x => x ? 'on' : 'off', t = x => x ? 'ton' : 'toff', ax = 125, bx = 195, cy = 90, r = 78;
+  const fs = s => s.length > 9 ? 10 : (s.length > 7 ? 11 : 13);
+  return `<svg class="venn" viewBox="0 0 ${W} ${H}" role="img" aria-label="Venn diagram for ${kind} join">
+  <defs>
+    <clipPath id="cA"><circle cx="${ax}" cy="${cy}" r="${r}"/></clipPath>
+    <mask id="nB"><rect width="${W}" height="${H}" fill="#fff"/><circle cx="${bx}" cy="${cy}" r="${r}" fill="#000"/></mask>
+    <mask id="nA"><rect width="${W}" height="${H}" fill="#fff"/><circle cx="${ax}" cy="${cy}" r="${r}" fill="#000"/></mask>
+  </defs>
+  <circle class="${f(on[0])}" cx="${ax}" cy="${cy}" r="${r}" mask="url(#nB)"/>
+  <circle class="${f(on[2])}" cx="${bx}" cy="${cy}" r="${r}" mask="url(#nA)"/>
+  <circle class="${f(on[1])}" cx="${bx}" cy="${cy}" r="${r}" clip-path="url(#cA)"/>
+  <circle class="ring" cx="${ax}" cy="${cy}" r="${r}"/>
+  <circle class="ring" cx="${bx}" cy="${cy}" r="${r}"/>
+  <text class="${t(on[0])}" x="${ax-40}" y="${cy+5}" text-anchor="middle" font-size="${fs(a)}">${a}</text>
+  <text class="${t(on[2])}" x="${bx+40}" y="${cy+5}" text-anchor="middle" font-size="${fs(b)}">${b}</text>
+</svg>`;
+}
+
+function visibleState() {
+  const upto = full ? T.steps.length - 1 : pos;
+  const done = T.steps.slice(0, upto + 1);
+  const pairs = done.filter(s => s.t === 'cmp' && s.m);
+  const lMatched = new Set(), rMatched = new Set(), lNo = new Set(), rNo = new Set();
+  done.forEach(s => {
+    if (s.t === 'cmp' && s.m) { lMatched.add(s.li); rMatched.add(s.ri); }
+    if (s.t === 'pad' || s.t === 'drop') { if (s.li !== undefined) lNo.add(s.li); if (s.ri !== undefined) rNo.add(s.ri); }
+  });
+  if (cfg().mode === 'anti') { lNo.clear(); done.forEach(s => { if (s.t === 'pad') lNo.add(s.li); }); }
+  const rowIdx = done.filter(s => s.e !== null && s.e !== undefined).map(s => s.e);
+  const cur = full ? null : T.steps[pos] || null;
+  return {pairs, lMatched, rMatched, lNo, rNo, rowIdx, cur};
+}
+
+function srcTable(side, st) {
+  const c = cfg(), t = side === 'L' ? c.L : c.R, alias = side === 'L' ? c.la : c.ra, cols = side === 'L' ? c.lCols : c.rCols;
+  const derived = t.startsWith('@'), rows = rowsOf(t);
+  const m = side === 'L' ? st.lMatched : st.rMatched, no = side === 'L' ? st.lNo : st.rNo;
+  const curI = st.cur ? (side === 'L' ? st.cur.li : st.cur.ri) : undefined;
+  const title = derived ? `Result of hop${+t.slice(1) > 1 ? 's 1–' + t.slice(1) : ' 1'}` : t;
+  let h = `<div class="tcap"><strong>${title}</strong><span class="alias">${alias}</span></div><table><thead><tr>`;
+  h += cols.map(x => `<th scope="col">${x}</th>`).join('') + (derived ? '' : `<th class="del"><span style="position:absolute;left:-9999px">Remove</span></th>`) + `</tr></thead><tbody>`;
+  rows.forEach((r, i) => {
+    const cls = [i === curI ? 'cur' : '', m.has(i) ? 'matched' : (no.has(i) ? 'nomatch' : '')].join(' ');
+    h += `<tr class="${cls}" data-i="${i}">` + cols.map(x => derived
+      ? `<td class="${isNull(r[x]) ? 'nullv' : ''}">${esc(fmt(r[x]))}</td>`
+      : `<td contenteditable="true" spellcheck="false" data-t="${t}" data-i="${i}" data-c="${x}" class="${isNull(r[x]) ? 'nullv' : ''}">${esc(fmt(r[x]))}</td>`).join('') +
+      (derived ? '' : `<td class="del"><button class="x" data-t="${t}" data-i="${i}" aria-label="Remove row ${i+1} from ${t}">×</button></td>`) + `</tr>`;
+  });
+  h += `</tbody></table>`;
+  h += derived ? `<p class="derived-note">Built from the earlier hops. Edit the real tables in earlier hops to change it.</p>` : `<button class="add" data-t="${t}">Add row</button>`;
+  $(side === 'L' ? 'lt' : 'rt').className = 'src' + (derived ? ' derived' : '');
+  return h;
+}
+
+let freshFrom = Infinity;
+function render() {
+  const c = cfg();
+  const st = visibleState();
+  $('lt').innerHTML = srcTable('L', st);
+  $('rt').innerHTML = srcTable('R', st);
+
+  const rows = st.rowIdx.map(i => ({...T.rows[i], idx:i}));
+  const n = rows.length, rs = `${n} row${n === 1 ? '' : 's'}`;
+  $('count').textContent = full ? rs : `${rs} so far`;
+  if (!n) {
+    $('res').innerHTML = `<p class="empty">${full ? 'This join returns no rows with the current data.' : 'No rows yet. Press Step or Play to start comparing.'}</p>`;
+  } else {
+    let h = `<table class="res"><thead><tr>${T.spec.map(o => `<th scope="col">${esc(o.h)}</th>`).join('')}</tr></thead><tbody>`;
+    rows.forEach((r, k) => {
+      h += `<tr class="${r.match ? 'match' : ''} ${k >= freshFrom ? 'fresh' : ''}" data-li="${r.li ?? ''}" data-ri="${r.ri ?? ''}">` +
+        r.cells.map(x => `<td class="${x.nul ? 'nullv' : ''}">${esc(x.v)}</td>`).join('') + `</tr>`;
+    });
+    $('res').innerHTML = h + '</tbody></table>';
+  }
+  freshFrom = Infinity;
+
+  const total = T.steps.length;
+  const what = JOINS[key].multi ? `hop ${hop + 1} (${CHAIN[hop].title})` : `<strong>${c.name}</strong>`;
+  if (full) $('narr').innerHTML = `Showing the full result of ${what}: ${rs}. Press Play to watch how it is built.`;
+  else if (pos < 0) $('narr').innerHTML = 'Ready. Each row on the left will be compared with each row on the right.';
+  else $('narr').innerHTML = T.steps[pos].text + (pos === total - 1 ? ` <strong>Done: ${rs}.</strong>` : '');
+  $('progress').textContent = full ? `${total} steps` : `Step ${Math.max(pos + 1, 0)} of ${total}`;
+  $('play').textContent = timer ? 'Pause' : (!full && pos >= total - 1 ? 'Replay' : 'Play');
+
+  requestAnimationFrame(() => drawWires(st));
+}
+
+function rowEl(side, i) { return i === undefined || i === null || i === '' ? null : document.querySelector(`#${side === 'L' ? 'lt' : 'rt'} tr[data-i="${i}"]`); }
+function drawWires(st, hover) {
+  const svg = $('wires'), stage = $('stage'), sr = stage.getBoundingClientRect();
+  svg.setAttribute('viewBox', `0 0 ${stage.scrollWidth} ${stage.scrollHeight}`);
+  svg.style.width = stage.scrollWidth + 'px'; svg.style.height = stage.scrollHeight + 'px';
+  const lt = $('lt').querySelector('table'), rt = $('rt').querySelector('table');
+  if (!lt || !rt) { svg.innerHTML = ''; return; }
+  const x1 = lt.getBoundingClientRect().right - sr.left + stage.scrollLeft + 6;
+  const x2 = rt.getBoundingClientRect().left - sr.left + stage.scrollLeft - 6;
+  const yOf = el => { const b = el.getBoundingClientRect(); return b.top - sr.top + stage.scrollTop + b.height / 2; };
+  const path = (a, b, stroke, w, dash, op) => {
+    const ea = rowEl('L', a), eb = rowEl('R', b); if (!ea || !eb) return '';
+    const ya = yOf(ea), yb = yOf(eb), mx = (x1 + x2) / 2;
+    return `<path d="M${x1},${ya} C${mx},${ya} ${mx},${yb} ${x2},${yb}" fill="none" style="stroke:${stroke}" stroke-width="${w}" ${dash ? 'stroke-dasharray="6 5"' : ''} opacity="${op}"/>` +
+      `<circle cx="${x1}" cy="${ya}" r="3.5" style="fill:${stroke}" opacity="${op}"/><circle cx="${x2}" cy="${yb}" r="3.5" style="fill:${stroke}" opacity="${op}"/>`;
+  };
+  let s = '';
+  st.pairs.forEach(p => { if (!(st.cur && st.cur === p)) s += path(p.li, p.ri, 'var(--teal)', 2.5, false, hover ? .25 : .75); });
+  if (st.cur && st.cur.t === 'cmp') s += path(st.cur.li, st.cur.ri, st.cur.m ? 'var(--teal)' : 'var(--warn)', 3.5, !st.cur.m, 1);
+  if (hover && hover.li !== '' && hover.ri !== '') s += path(+hover.li, +hover.ri, 'var(--heading)', 4, false, 1);
+  svg.innerHTML = s;
+}
+
+/* ---------- controls ---------- */
+function rebuild(keepFull = true) { stop(); T = trace(cfg()); pos = -1; full = keepFull; render(); }
+function stop() { clearInterval(timer); timer = null; }
+function stepOnce() {
+  if (full) { full = false; pos = -1; }
+  if (pos >= T.steps.length - 1) { stop(); render(); return; }
+  pos++;
+  const s = T.steps[pos];
+  if (s.e !== null && s.e !== undefined) freshFrom = T.steps.slice(0, pos).filter(x => x.e !== null && x.e !== undefined).length;
+  if (pos >= T.steps.length - 1) stop();
+  render();
+}
+$('play').onclick = () => {
+  if (timer) { stop(); render(); return; }
+  if (full || pos >= T.steps.length - 1) { full = false; pos = -1; }
+  timer = setInterval(stepOnce, +$('speed').value);
+  stepOnce();
+};
+$('step').onclick = () => { stop(); stepOnce(); };
+$('all').onclick = () => { stop(); full = true; render(); };
+$('speed').onchange = () => { if (timer) { stop(); timer = setInterval(stepOnce, +$('speed').value); } };
+$('resetData').onclick = () => { data = JSON.parse(JSON.stringify(SAMPLE)); rebuild(true); };
+
+function renderAside() {
+  const j = JOINS[key], c = cfg();
+  $('jname').textContent = j.multi ? `Multi-table: hop ${hop + 1} of 4` : j.name;
+  $('jdesc').textContent = j.multi ? CHAIN[hop].desc : j.desc;
+  $('venn').innerHTML = vennSvg(c.venn, c.vl, c.vr);
+  $('tip').innerHTML = j.multi ? CHAIN[hop].tip : j.tip;
+  if (j.multi) {
+    const now = [3 + 2 * hop, 4 + 2 * hop];
+    $('sql').innerHTML = sqlHtml(CHAIN_SQL, now, i => i > 4 + 2 * hop);
+    $('hops').hidden = false;
+    $('hops').innerHTML = `<p>The query runs one join at a time. Pick a hop to see it.</p><div class="chain"><span class="start">Orders</span>` +
+      CHAIN.map((h, i) => `<span class="arr">→</span><button data-h="${i}" class="${i < hop ? 'done' : ''}" aria-pressed="${i === hop}">${h.R}</button>`).join('') + `</div>`;
+  } else {
+    $('sql').innerHTML = sqlHtml(j.sql);
+    $('hops').hidden = true;
+  }
+}
+function selectJoin(k) {
+  key = k; hop = 0;
+  document.querySelectorAll('#picker button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === k));
+  renderAside(); rebuild(true);
+}
+$('hops').onclick = e => { const b = e.target.closest('button'); if (b) { hop = +b.dataset.h; renderAside(); rebuild(true); } };
+$('picker').innerHTML = Object.entries(JOINS).map(([k, j]) => j ? `<button data-k="${k}" aria-pressed="false">${j.label}</button>` : `<span class="sep" aria-hidden="true"></span>`).join('');
+$('picker').onclick = e => { const b = e.target.closest('button'); if (b) selectJoin(b.dataset.k); };
+
+/* editing source tables */
+const stageEl = $('stage');
+function commit(td) {
+  const t = td.dataset.t, i = +td.dataset.i, c = td.dataset.c, v = td.textContent.trim();
+  const nv = isNull(v) ? null : v;
+  if (data[t][i] && fmt(data[t][i][c]) !== fmt(nv)) { data[t][i][c] = nv; rebuild(true); }
+}
+stageEl.addEventListener('focusout', e => { if (e.target.matches('td[contenteditable]')) commit(e.target); });
+stageEl.addEventListener('keydown', e => {
+  if (e.target.matches('td[contenteditable]') && e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+  if (e.target.matches('td[contenteditable]') && e.key === 'Escape') { e.target.textContent = fmt(data[e.target.dataset.t][+e.target.dataset.i][e.target.dataset.c]); e.target.blur(); }
+});
+stageEl.addEventListener('focusin', e => {
+  if (e.target.matches('td[contenteditable]')) { stop(); const r = document.createRange(); r.selectNodeContents(e.target); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+});
+const nextId = (t, col, start) => { const ids = data[t].map(r => +r[col]).filter(n => !isNaN(n)); return String((ids.length ? Math.max(...ids) : start) + 1); };
+const NEWROW = {
+  Customer:     () => ({CustomerID:nextId('Customer','CustomerID',100), CustomerName:'new', City:'Boston'}),
+  Orders:       () => ({OrderID:nextId('Orders','OrderID',300), CustomerID:'101', OrderDate:'2026-08-08', TotalAmount:'0.00'}),
+  OrderDetails: () => ({OrderID:'301', FoodID:'201', Quantity:'1'}),
+  FoodItem:     () => ({FoodID:nextId('FoodItem','FoodID',200), FoodName:'New dish', Price:'10.00', RestaurantID:'1'}),
+  Restaurant:   () => ({RestaurantID:nextId('Restaurant','RestaurantID',0), RestaurantName:'New place', City:'Boston', CuisineType:'Thai'}),
+  Employee:     () => ({EmployeeID:nextId('Employee','EmployeeID',0), EmployeeName:'New hire', ManagerID:'1'}),
+  PriceBand:    () => ({Band:'New band', MinPrice:'0.00', MaxPrice:'0.00'}),
+};
+stageEl.addEventListener('click', e => {
+  const del = e.target.closest('button.x');
+  if (del) { data[del.dataset.t].splice(+del.dataset.i, 1); rebuild(true); return; }
+  const add = e.target.closest('button.add');
+  if (add) { const t = add.dataset.t; data[t].push(NEWROW[t]()); rebuild(true); }
+});
+
+/* hover a result row to trace it back to its source rows */
+$('res').addEventListener('mouseover', e => {
+  const tr = e.target.closest('tbody tr'); if (!tr) return;
+  document.querySelectorAll('.src tr.hl').forEach(x => x.classList.remove('hl'));
+  const a = rowEl('L', tr.dataset.li), b = rowEl('R', tr.dataset.ri);
+  a && a.classList.add('hl'); b && b.classList.add('hl');
+  drawWires(visibleState(), {li: tr.dataset.li, ri: tr.dataset.ri});
+});
+$('res').addEventListener('mouseleave', () => {
+  document.querySelectorAll('.src tr.hl').forEach(x => x.classList.remove('hl'));
+  drawWires(visibleState());
+});
+window.addEventListener('resize', () => drawWires(visibleState()));
+stageEl.addEventListener('scroll', () => drawWires(visibleState()));
+
+selectJoin('inner');
+</script>
+</body>
+</html>
